@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+    db:
+        image: mysql:8
+        ports:
+          - "3306:3306"
+        restart: always
+        environment:
+          MYSQL_DATABASE: test
+          MYSQL_USER: prasun
+          MYSQL_PASSWORD: test
+          MYSQL_ROOT_PASSWORD: root
+        volumes:
+          - db-data:/var/lib/mysql
+        networks:
+          - two-boot-docker-compose
+    eureka:
+       # image: spring-docker-compose:v0.1
+        build:
+            context: eureka-server-application
+            dockerfile: Dockerfile.txt
+        ports:
+            - "8761:8761"
+        restart: always
+        networks:
+            - two-boot-docker-compose
+    company:
+        #image: spring-docker-compose-second:v0.1
+        build:
+            context: company-application
+            dockerfile: Dockerfile.txt
+        depends_on:
+            - eureka
+            - db
+        ports:
+            - "8585:8585"
+        restart: always
+        environment:
+            HOST: eureka
+            MYSQL_DATABASE: db
+        networks:
+            - two-boot-docker-compose
+    vendor:
+        #image: spring-docker-compose-second:v0.1
+        build:
+            context: vendor-application
+            dockerfile: Dockerfile.txt
+        depends_on:
+            - company
+        ports:
+            - "8686:8686"
+        restart: always
+        environment:
+            HOST: eureka
+        networks:
+            - two-boot-docker-compose
+    zuul:
+        #image: spring-docker-compose-second:v0.1
+        build:
+            context: zuul-application
+            dockerfile: Dockerfile.txt
+        depends_on:
+            - vendor
+        ports:
+            - "8080:8080"
+        restart: always
+        environment:
+            HOST: eureka
+        networks:
+            - two-boot-docker-compose
+volumes:
+    db-data:
+    
+networks:
+    two-boot-docker-compose:
