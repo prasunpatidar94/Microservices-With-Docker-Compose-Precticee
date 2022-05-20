@@ -15,6 +15,13 @@ services:
           - db-data:/var/lib/mysql
         networks:
           - two-boot-docker-compose
+    zipkin:
+        image: openzipkin/zipkin
+        ports:
+            - "9411:9411"
+        restart: always
+        networks:
+            - two-boot-docker-compose
     eureka:
        # image: spring-docker-compose:v0.1
         build:
@@ -33,12 +40,14 @@ services:
         depends_on:
             - eureka
             - db
+            - zipkin
         ports:
             - "8585:8585"
         restart: always
         environment:
             HOST: eureka
             MYSQL_DATABASE: db
+            ZIPKIN_HOST: zipkin
         networks:
             - two-boot-docker-compose
     vendor:
@@ -48,11 +57,13 @@ services:
             dockerfile: Dockerfile.txt
         depends_on:
             - company
+            - zipkin
         ports:
             - "8686:8686"
         restart: always
         environment:
             HOST: eureka
+            ZIPKIN_HOST: zipkin
         networks:
             - two-boot-docker-compose
     zuul:

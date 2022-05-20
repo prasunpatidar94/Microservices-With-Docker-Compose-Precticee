@@ -255,7 +255,7 @@ step 1 :
 													
 											
 													
-=============Admin server for monitering=============================================================================													
+=============Admin server for monitering												
 													
 	* WE know that if we want to check all application health and exra detailes the we need to go with actoator but if we are woring with microservices												
 	  the we need to monitor all microserves at same time in thios case we need to go with another tool of spring.												
@@ -540,7 +540,7 @@ create 3 application to expplaiun the funcnality
 				#zuul.routes.company.path=/com/**
 				#zuul.routes.company.service-id=company-application
 				
-				# gateway mconfriguration
+				# gateway confriguration
 				spring.cloud.gateway.routes[0].id=vendor-application
 				spring.cloud.gateway.routes[0].uri=lb://vendor-application
 				spring.cloud.gateway.routes[0].predicates[0]=Path=/vendor/**
@@ -550,10 +550,116 @@ create 3 application to expplaiun the funcnality
 				spring.cloud.gateway.routes[1].uri=lb://company-application
 				spring.cloud.gateway.routes[1].predicates[0]=Path=/company/**
 
+	Dockerfile.txt( this is all of the application to create docker images in jar or war )
+	
+		#FROM tomcat:9-jre11
+		#EXPOSE 8686
+		#RUN rm -rf /usr/local/tomcat/webapps/*
+		#COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
+		#CMD ["catalina.sh","run"]
+
+		FROM adoptopenjdk/openjdk11
+		EXPOSE 8686
+		ADD target/*.jar app.jar
+		ENTRYPOINT ["sh","-c","java -jar app.jar"]
+
+	docker-compose.yml  (this is for to  start the all application one by one on singale command )
+		
+		version: '3'
+
+		services:
+			db:
+				image: mysql:8
+				ports:
+				  - "3306:3306"
+				restart: always
+				environment:
+				  MYSQL_DATABASE: test
+				  MYSQL_USER: prasun
+				  MYSQL_PASSWORD: test
+				  MYSQL_ROOT_PASSWORD: root
+				volumes:
+				  - db-data:/var/lib/mysql
+				networks:
+				  - two-boot-docker-compose
+			eureka:
+			   # image: spring-docker-compose:v0.1
+				build:
+					context: eureka-server-application
+					dockerfile: Dockerfile.txt
+				ports:
+					- "8761:8761"
+				restart: always
+				networks:
+					- two-boot-docker-compose
+			company:
+				#image: spring-docker-compose-second:v0.1
+				build:
+					context: company-application
+					dockerfile: Dockerfile.txt
+				depends_on:
+					- eureka
+					- db
+				ports:
+					- "8585:8585"
+				restart: always
+				environment:
+					HOST: eureka
+					MYSQL_DATABASE: db
+				networks:
+					- two-boot-docker-compose
+			vendor:
+				#image: spring-docker-compose-second:v0.1
+				build:
+					context: vendor-application
+					dockerfile: Dockerfile.txt
+				depends_on:
+					- company
+				ports:
+					- "8686:8686"
+				restart: always
+				environment:
+					HOST: eureka
+				networks:
+					- two-boot-docker-compose
+			zuul:
+				#image: spring-docker-compose-second:v0.1
+				build:
+					context: zuul-application
+					dockerfile: Dockerfile.txt
+				depends_on:
+					- vendor
+				ports:
+					- "8080:8080"
+				restart: always
+				environment:
+					HOST: eureka
+				networks:
+					- two-boot-docker-compose
+		volumes:
+			db-data:
+			
+		networks:
+			two-boot-docker-compose:
 
 
+==========Zipkin-with-slueth=
 
+1> properties:
+		spring.zipkin.base-url= http://${ZIPKIN_HOST:localhost}:9411/
+		
+2> Dependency :
+		  
+			<dependency>
+			  <groupId>org.springframework.cloud</groupId>
+			  <artifactId>spring-cloud-sleuth-zipkin</artifactId>
+			</dependency>
+			<dependency>
+			  <groupId>org.springframework.cloud</groupId>
+			  <artifactId>spring-cloud-starter-sleuth</artifactId>
+			</dependency>
 
+3 > Run Zipkin server on docker or local by docker images or jar file  
 
-
-
+			on docker: docker run -d -p 9411:9411 openzipkin/zipkin   (*i am using docker image)
+	

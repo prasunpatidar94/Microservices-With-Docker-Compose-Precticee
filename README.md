@@ -255,7 +255,7 @@ step 1 :
 													
 											
 													
-=============Admin server for monitering=============================================================================													
+=============Admin server for monitering												
 													
 	* WE know that if we want to check all application health and exra detailes the we need to go with actoator but if we are woring with microservices												
 	  the we need to monitor all microserves at same time in thios case we need to go with another tool of spring.												
@@ -643,3 +643,23 @@ create 3 application to expplaiun the funcnality
 			two-boot-docker-compose:
 
 
+==========Zipkin-with-slueth=
+
+1> properties:
+		spring.zipkin.base-url= http://${ZIPKIN_HOST:localhost}:9411/
+		
+2> Dependency :
+		  
+			<dependency>
+			  <groupId>org.springframework.cloud</groupId>
+			  <artifactId>spring-cloud-sleuth-zipkin</artifactId>
+			</dependency>
+			<dependency>
+			  <groupId>org.springframework.cloud</groupId>
+			  <artifactId>spring-cloud-starter-sleuth</artifactId>
+			</dependency>
+
+3 > Run Zipkin server on docker or local by docker images or jar file  
+
+			on docker: docker run -d -p 9411:9411 openzipkin/zipkin   (*I am using docker image)
+	
